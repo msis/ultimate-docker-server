@@ -18,3 +18,26 @@ services:
       # - "10080:10080"
     volumes:
       - ./Gogs/:/data
+
+  drone-server:
+    image: drone/drone:0.5
+    depends_on: [ git ]
+    volumes:
+      - ./drone:/var/lib/drone/
+    restart: always
+    environment:
+      - DRONE_OPEN=false
+      - DRONE_GOGS=true
+      - DRONE_GOGS_URL=http://git:10080
+      - DRONE_SECRET=123456
+
+  drone-agent:
+    image: drone/drone:0.5
+    command: agent
+    restart: always
+    depends_on: [ drone-server ]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DRONE_SERVER=ws://drone-server:8000/ws/broker
+      - DRONE_SECRET=123456

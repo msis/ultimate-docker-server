@@ -3,3 +3,9 @@ git.example.com {
   proxy / git:10080
   log log/access.a.log
 }
+
+drone.example.com {
+  tls off
+  proxy / drone-server:8000
+  log log/access.a.log
+}
