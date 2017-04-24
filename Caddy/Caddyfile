@@ -1,0 +1,5 @@
+git.example.com {
+  tls off
+  proxy / git:10080
+  log log/access.a.log
+}

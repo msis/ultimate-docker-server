@@ -1,0 +1,20 @@
+version: '2'
+services:
+  web-proxy:
+    image: "zzrot/alpine-caddy"
+    ports:
+      - "80:2015"
+    volumes:
+      - ./Caddy/Caddyfile:/etc/Caddyfile
+      - ./Gogs/public/:/home/git/gogs/public/
+
+  smtp:
+    image: "namshi/smtp"
+
+  git:
+    image: "gogs/gogs"
+    ports:
+      - "10022:10022"
+      # - "10080:10080"
+    volumes:
+      - ./Gogs/:/data
