@@ -9,3 +9,9 @@ drone.example.com {
   proxy / drone-server:8000
   log log/access.a.log
 }
+
+chat.example.com {
+  tls off
+  proxy / rocketchat:3000
+  log log/access.a.log
+}
