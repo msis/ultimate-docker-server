@@ -1,13 +1,12 @@
 Ultimate Docker Server
 ======================
 
-**UDS** is a docker compose file that you can fire on your server that will automatically enable you to:
-- run git server ([Gogs](https://github.com/gogits/gogs))
-- run CI and CD ([drone](https://github.com/drone/drone))
-- run web server ([Caddy](https://github.com/mholt/caddy))
+**UDS** is a docker compose file that you can fire on your server that will automatically enable you to have:
+- git server ([Gogs](https://github.com/gogits/gogs))
+- CI and CD ([drone](https://github.com/drone/drone))
+- web proxy & load balancer ([traefik](https://github.com/containous/traefik))
+- chat server ([Rocket.Chat](https://github.com/RocketChat/Rocket.Chat))
 - (*to be continued*)
-
-Caddy handles reverse proxy and load balancing too if needed.
 
 ## Getting started
 Clone the repo and fire up `docker-compose`:

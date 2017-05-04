@@ -1,40 +1,53 @@
 version: '2'
 services:
-  web-proxy:
-    image: "zzrot/alpine-caddy"
+  traefik:
+    image: traefik:latest
+    command: --configFile=/var/traefik/traefik.toml
     ports:
-      - "80:2015"
+      - "443:443"
+      - "80:80"
+      - "8080:8080"
     volumes:
-      - ./Caddy/Caddyfile:/etc/Caddyfile
-      - ./Gogs/public/:/home/git/gogs/public/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - $PWD/traefik.toml:/var/traefik/traefik.toml
+      - $PWD/acme:/etc/acme
 
   smtp:
     image: "namshi/smtp"
 
   git:
     image: "gogs/gogs"
-    ports:
-      - "10022:10022"
-      # - "10080:10080"
+    # ports:
+    #   - "10022:10022"
+    #   - "10080:10080"
     volumes:
       - ./Gogs/:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=git-server"
+      - "traefik.frontend.rule=Host:git.docker.localhost"
 
   drone-server:
     image: drone/drone:0.5
     depends_on: [ git ]
     volumes:
       - ./drone:/var/lib/drone/
-    restart: always
+    # restart: always
     environment:
       - DRONE_OPEN=false
       - DRONE_GOGS=true
-      - DRONE_GOGS_URL=http://git:10080
+      - DRONE_GOGS_URL=http://git
       - DRONE_SECRET=123456
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=drone-server"
+      - "traefik.frontend.rule=Host:drone.docker.localhost"
+
 
   drone-agent:
     image: drone/drone:0.5
     command: agent
-    restart: always
+    # restart: always
     depends_on: [ drone-server ]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -44,12 +57,12 @@ services:
 
   rocketchat:
     image: rocketchat/rocket.chat:latest
-    restart: unless-stopped
+    # restart: unless-stopped
     volumes:
       - ./uploads:/app/uploads
     environment:
       - PORT=3000
-      - ROOT_URL=http://localhost:3000
+      - ROOT_URL=http://chat.docker.localhost:3000
       - MONGO_URL=mongodb://mongo:27017/rocketchat
       - MONGO_OPLOG_URL=mongodb://mongo:27017/local
       - MAIL_URL=smtp://smtp.email
@@ -59,19 +72,18 @@ services:
       - mongo
     # ports:
     #   - 3000:3000
-    # labels:
-    #   - "traefik.backend=rocketchat"
-    #   - "traefik.frontend.rule=Host: your.domain.tld"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=rocketchat"
+      - "traefik.frontend.rule=Host:chat.docker.localhost"
 
   mongo:
     image: mongo:3.2
-    restart: unless-stopped
+    # restart: unless-stopped
     volumes:
      - ./data/db:/data/db
-     #- ./data/dump:/dump
+     - ./data/dump:/dump
     command: mongod --smallfiles --oplogSize 128 --replSet rs0
-    # labels:
-    #   - "traefik.enable=false"
 
   # this container's job is just run the command to initialize the replica set.
   # it will run the command and remove himself (it will not stay running)
@@ -84,7 +96,7 @@ services:
   # hubot, the popular chatbot (add the bot user first and change the password before starting this image)
   hubot:
     image: rocketchat/hubot-rocketchat:latest
-    restart: unless-stopped
+    # restart: unless-stopped
     environment:
       - ROCKETCHAT_URL=rocketchat:3000
       - ROCKETCHAT_ROOM=GENERAL
@@ -95,20 +107,5 @@ services:
       - EXTERNAL_SCRIPTS=hubot-help,hubot-seen,hubot-links,hubot-diagnostics
     depends_on:
       - rocketchat
-    # labels:
-    #   - "traefik.enable=false"
     volumes:
       - ./scripts:/home/hubot/scripts
-  # this is used to expose the hubot port for notifications on the host on port 3001, e.g. for hubot-jenkins-notifier
-    ports:
-      - 3001:8080
-
-  #traefik:
-  #  image: traefik:latest
-  #  restart: unless-stopped
-  #  command: traefik --docker --acme=true --acme.domains='your.domain.tld' --acme.email='your@email.tld' --acme.entrypoint=https --acme.storagefile=acme.json --defaultentrypoints=http --defaultentrypoints=https --entryPoints='Name:http Address::80 Redirect.EntryPoint:https' --entryPoints='Name:https Address::443 TLS.Certificates:'
-  #  ports:
-  #    - 80:80
-  #    - 443:443
-  #  volumes:
-  #    - /var/run/docker.sock:/var/run/docker.sock
